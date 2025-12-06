@@ -7,10 +7,7 @@ import { calculateCustomMetrics } from './meta/sync.js';
 const AdAccount = bizSdk.AdAccount;
 const AdsInsights = bizSdk.AdsInsights;
 
-// ... (Keep CAMPAIGN_FIELDS, ADSET_FIELDS, AD_FIELDS, INSIGHTS_FIELDS as they are useful for other things or just leave them)
-
 export const fetchMetaAdAccounts = async (accessToken) => {
-    // ... (Keep existing fetchMetaAdAccounts)
     try {
         console.log('[MetaService] fetchMetaAdAccounts: Init');
 
@@ -60,13 +57,19 @@ export const fetchMetaAdAccounts = async (accessToken) => {
         }
     } catch (error) {
         console.error('[MetaService] Error fetching Meta Ad Accounts:', error.response?.data || error.message);
-        const msg = error.response?.data?.error?.message || error.message || 'Failed to fetch ad accounts';
-        throw new Error(msg);
+        const fbErrorDetails = error.response?.data?.error;
+        const msg = fbErrorDetails?.message || error.message || 'Failed to fetch ad accounts';
+        
+        // Re-throw with more context if available
+        const enhancedError = new Error(msg);
+        if (fbErrorDetails) {
+            enhancedError.fbError = fbErrorDetails; // Attach original FB error object
+        }
+        throw enhancedError;
     }
 };
 
 export const fetchMetaPixels = async (accessToken, accountId) => {
-    // ... (Keep existing fetchMetaPixels)
     try {
         bizSdk.FacebookAdsApi.init(accessToken);
         const account = new AdAccount(accountId);
