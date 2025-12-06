@@ -41,8 +41,32 @@ const Integrations = () => {
     const handleConnectMeta = async () => {
         setError(null);
         try {
-            const { data, error } = await supabase.functions.invoke('meta-auth-start');
-            if (error) throw error;
+            const { data, error: invokeError } = await supabase.functions.invoke('meta-auth-start');
+
+            if (invokeError) {
+                let errorMessage = invokeError.message;
+                // Tenta extrair a mensagem de erro detalhada da Edge Function
+                const match = errorMessage.match(/Edge Function returned a non-2xx status code: \d+ - (.*)/);
+                if (match && match[1]) {
+                    try {
+                        const edgeFnErrorBody = JSON.parse(match[1]);
+                        if (edgeFnErrorBody.error) {
+                            errorMessage = edgeFnErrorBody.error;
+                        }
+                    } catch (parseError) {
+                        console.warn('Não foi possível analisar o corpo do erro da Edge Function:', parseError);
+                    }
+                }
+
+                // Mensagem específica para variáveis de ambiente ausentes
+                if (errorMessage.includes('Missing environment variables: META_APP_ID or META_REDIRECT_URI')) {
+                    errorMessage = 'Erro de configuração: As variáveis de ambiente META_APP_ID ou META_REDIRECT_URI não estão configuradas nas Edge Functions do Supabase. Por favor, configure-as.';
+                } else if (errorMessage.includes('Failed to send a request')) {
+                    errorMessage = 'Falha na conexão com o servidor. Verifique se: 1) As Edge Functions foram deployadas. 2) O arquivo .env está correto. 3) Você reiniciou o terminal após editar o .env.';
+                }
+                throw new Error(errorMessage);
+            }
+
             if (data?.url) {
                 const width = 600;
                 const height = 700;
@@ -73,14 +97,12 @@ const Integrations = () => {
                     }
                 };
                 window.addEventListener('message', handleMessage);
+            } else {
+                throw new Error('A função Edge retornou sucesso, mas não forneceu a URL de autenticação.');
             }
         } catch (err) {
             console.error('Meta Auth Error:', err);
-            let msg = err.message;
-            if (msg.includes('Failed to send a request')) {
-                msg = 'Falha na conexão com o servidor. Verifique se: 1) As Edge Functions foram deployadas. 2) O arquivo .env está correto. 3) Você reiniciou o terminal após editar o .env.';
-            }
-            setError(msg);
+            setError(err.message);
         }
     };
 
