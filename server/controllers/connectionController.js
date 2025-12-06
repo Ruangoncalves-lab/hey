@@ -62,52 +62,6 @@ export const createConnection = async (req, res) => {
     }
 };
 
-export const listMetaAccounts = async (req, res) => {
-    try {
-        const { access_token } = req.body;
-        console.log('listMetaAccounts chamada. A validar token...');
-
-        if (!access_token) {
-            return res.status(400).json({ message: 'Token de acesso é obrigatório' });
-        }
-
-        // Tenta buscar contas usando o serviço
-        // NOTE: This function is still using the old bizSdk/axios approach.
-        // For now, we'll leave it as is, but ideally, this would also be an Edge Function.
-        // Given the current error, let's focus on fixing the import map first.
-        // The `fetchMetaAdAccounts` is from `server/services/metaService.js` which was deleted.
-        // This means `listMetaAccounts` will fail. I need to re-add `fetchMetaAdAccounts` or
-        // create an Edge Function for it.
-
-        // Re-adding fetchMetaAdAccounts temporarily to make this controller functional
-        // This is a temporary measure until a dedicated Edge Function is created for listing accounts.
-        // For now, I will comment out the call to `fetchMetaAdAccounts` and return mock data
-        // to prevent a crash, and note that this needs a dedicated Edge Function.
-        
-        // const accounts = await fetchMetaAdAccounts(access_token); // This line will cause an error
-
-        // MOCK DATA for now, until a dedicated Edge Function is created for listing accounts
-        const accounts = [
-            { account_id: '1234567890', name: 'Mock Meta Account 1', currency: 'BRL', business: { id: 'biz1', name: 'Mock Business 1' } },
-            { account_id: '0987654321', name: 'Mock Meta Account 2', currency: 'USD', business: null },
-        ];
-
-        console.log(`Sucesso: ${accounts.length} contas encontradas.`);
-        res.json(accounts);
-
-    } catch (error) {
-        console.error('ERRO CRÍTICO NO META CONTROLLER:', error);
-        
-        const fbErrorMessage = error.response?.data?.error?.message;
-        const finalMessage = fbErrorMessage || error.message || 'Erro desconhecido ao conectar com o Facebook';
-
-        res.status(500).json({ 
-            message: `Erro na integração: ${finalMessage}`,
-            details: error.toString()
-        });
-    }
-};
-
 export const listMetaPixels = async (req, res) => {
     try {
         const { access_token, account_id } = req.body;

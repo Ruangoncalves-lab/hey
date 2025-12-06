@@ -33,7 +33,6 @@ import {
 import {
     getConnections,
     createConnection,
-    listMetaAccounts,
     listMetaPixels,
     syncConnection
 } from '../controllers/connectionController.js';
@@ -47,7 +46,7 @@ router.use(protect);
 // Connections
 router.get('/connections', getConnections);
 router.post('/connections', createConnection);
-router.post('/connections/meta/accounts', listMetaAccounts);
+// router.post('/connections/meta/accounts', listMetaAccounts); // REMOVED: Handled by Supabase Edge Function meta-get-business-entities
 router.post('/connections/meta/pixels', listMetaPixels);
 router.post('/connections/:connectionId/sync', syncConnection);
 
