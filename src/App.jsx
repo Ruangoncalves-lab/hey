@@ -26,6 +26,7 @@ import MetaDashboard from './pages/meta/Dashboard';
 import MetaAccounts from './pages/meta/Accounts';
 import MetaCampaigns from './pages/meta/Campaigns';
 import MetaOnboarding from './pages/MetaOnboarding';
+import ProtectedRoute from './components/ProtectedRoute'; // New import
 
 function App() {
   return (
@@ -34,35 +35,39 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
-        <Route path="/" element={<MainLayout />}>
-          <Route index element={<Dashboard />} />
-          <Route path="products" element={<Products />} />
-          <Route path="product/:id" element={<ProductDetails />} />
-          <Route path="orders" element={<Orders />} />
-          <Route path="integrations" element={<Integrations />} />
+        
+        {/* Protected Routes */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/" element={<MainLayout />}>
+            <Route index element={<Dashboard />} />
+            <Route path="products" element={<Products />} />
+            <Route path="product/:id" element={<ProductDetails />} />
+            <Route path="orders" element={<Orders />} />
+            <Route path="integrations" element={<Integrations />} />
 
-          {/* Traffic & Campaigns */}
-          <Route path="traffic" element={<TrafficManager />} />
-          <Route path="campaigns" element={<Campaigns />} />
-          <Route path="creatives" element={<CreativeLibrary />} />
+            {/* Traffic & Campaigns */}
+            <Route path="traffic" element={<TrafficManager />} />
+            <Route path="campaigns" element={<Campaigns />} />
+            <Route path="creatives" element={<CreativeLibrary />} />
 
-          {/* Keep detail routes accessible */}
-          <Route path="campaigns/:id" element={<CampaignDetail />} />
-          <Route path="traffic/google/campaign/:id" element={<GoogleCampaignDetail />} />
+            {/* Keep detail routes accessible */}
+            <Route path="campaigns/:id" element={<CampaignDetail />} />
+            <Route path="traffic/google/campaign/:id" element={<GoogleCampaignDetail />} />
 
-          <Route path="finances" element={<Finances />} />
-          <Route path="alerts" element={<Alerts />} />
-          <Route path="settings" element={<Settings />} />
-          <Route path="social-media" element={<SocialMedia />} />
-          <Route path="analytics" element={<DeepAnalytics />} />
-          <Route path="smart-campaign" element={<SmartCampaignCreator />} />
-          <Route path="whatsapp" element={<WhatsApp />} />
+            <Route path="finances" element={<Finances />} />
+            <Route path="alerts" element={<Alerts />} />
+            <Route path="settings" element={<Settings />} />
+            <Route path="social-media" element={<SocialMedia />} />
+            <Route path="analytics" element={<DeepAnalytics />} />
+            <Route path="smart-campaign" element={<SmartCampaignCreator />} />
+            <Route path="whatsapp" element={<WhatsApp />} />
 
-          {/* Meta Ads Routes */}
-          <Route path="meta/onboarding" element={<MetaOnboarding />} />
-          <Route path="meta/dashboard" element={<MetaDashboard />} />
-          <Route path="meta/accounts" element={<MetaAccounts />} />
-          <Route path="meta/campaigns/:id" element={<MetaCampaigns />} />
+            {/* Meta Ads Routes */}
+            <Route path="meta/onboarding" element={<MetaOnboarding />} />
+            <Route path="meta/dashboard" element={<MetaDashboard />} />
+            <Route path="meta/accounts" element={<MetaAccounts />} />
+            <Route path="meta/campaigns/:id" element={<MetaCampaigns />} />
+          </Route>
         </Route>
       </Routes>
     </Router>
