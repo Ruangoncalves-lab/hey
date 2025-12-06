@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Menu, Moon, Sun, Bell, Search, LogOut, User, Settings, ChevronDown } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSession } from '../context/SessionContext'; // Import useSession
 
 const Header = ({ sidebarOpen, setSidebarOpen, darkMode, setDarkMode }) => {
     const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -9,6 +10,7 @@ const Header = ({ sidebarOpen, setSidebarOpen, darkMode, setDarkMode }) => {
     const trigger = useRef(null);
     const dropdown = useRef(null);
     const navigate = useNavigate();
+    const { supabase } = useSession(); // Get supabase client from context
 
     // Close on click outside
     useEffect(() => {
@@ -21,9 +23,9 @@ const Header = ({ sidebarOpen, setSidebarOpen, darkMode, setDarkMode }) => {
         return () => document.removeEventListener('click', clickHandler);
     }, [dropdownOpen]);
 
-    const handleLogout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('tenantId');
+    const handleLogout = async () => {
+        await supabase.auth.signOut(); // Use Supabase signOut
+        localStorage.removeItem('tenantId'); // Remove tenantId from local storage
         navigate('/login');
     };
 

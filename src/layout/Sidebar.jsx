@@ -16,6 +16,7 @@ import {
     LayoutGrid,
     Image
 } from 'lucide-react';
+import { useSession } from '../context/SessionContext'; // Import useSession
 
 const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
     const location = useLocation();
@@ -23,6 +24,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
     const trigger = useRef(null);
     const sidebar = useRef(null);
     const [showLogoutModal, setShowLogoutModal] = useState(false);
+    const { supabase } = useSession(); // Get supabase client from context
 
     // Close on click outside
     useEffect(() => {
@@ -40,9 +42,9 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
         setSidebarOpen(false);
     }, [location]);
 
-    const handleLogout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('tenantId');
+    const handleLogout = async () => {
+        await supabase.auth.signOut(); // Use Supabase signOut
+        localStorage.removeItem('tenantId'); // Remove tenantId from local storage
         navigate('/login');
     };
 
