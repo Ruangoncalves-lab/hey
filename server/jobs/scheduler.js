@@ -1,6 +1,6 @@
 import cron from 'node-cron';
 import { Campaign, MetricsTimeseries, Insight, Automation, Creative, Connection } from '../models/index.js';
-import { syncMetaAccount } from '../services/metaService.js';
+import { supabase } from '../config/supabase.js'; // Import Supabase client
 
 // 1. Metrics Aggregator (Hourly)
 const metricsAggregatorJob = async () => {
@@ -12,14 +12,21 @@ const metricsAggregatorJob = async () => {
 
         for (const connection of connections) {
             try {
-                await syncMetaAccount(connection);
-                console.log(`Synced Meta account for tenant ${connection.tenant_id}`);
+                // Invoke the meta-sync Edge Function for each active connection
+                const { data, error } = await supabase.functions.invoke('meta-sync', {
+                    body: { user_id: connection.user_id } // Assuming connection has user_id
+                });
+
+                if (error) throw error;
+                if (data?.error) throw new Error(data.error);
+
+                console.log(`Synced Meta account for user ${connection.user_id} via Edge Function.`);
 
                 // Update last synced time
                 connection.last_synced_at = new Date();
                 await connection.save();
             } catch (err) {
-                console.error(`Failed to sync tenant ${connection.tenant_id}:`, err.message);
+                console.error(`Failed to sync tenant ${connection.tenant_id} (user ${connection.user_id}):`, err.message);
             }
         }
     } catch (error) {
@@ -63,17 +70,12 @@ const socialPublisherJob = async () => {
     // Logic: Check for scheduled posts due now and publish
 };
 
-import { initMetaSyncJob } from './metaSyncJob.js';
-
 export const initScheduler = () => {
     // Schedule jobs
     cron.schedule('0 * * * *', metricsAggregatorJob); // Hourly
     cron.schedule('*/15 * * * *', insightsEngineJob); // Every 15 mins
     cron.schedule('*/5 * * * *', automationRunnerJob); // Every 5 mins
     cron.schedule('* * * * *', socialPublisherJob); // Every minute
-
-    // New Meta Sync Job (Standalone)
-    initMetaSyncJob();
 
     console.log('Scheduler initialized.');
 };
