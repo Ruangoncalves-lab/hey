@@ -3,18 +3,21 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Eye, EyeOff, ArrowRight, Check, LayoutDashboard, BarChart2, Users, User, Building } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import Preloader from '../components/Preloader';
+import { useSession } from '../context/SessionContext'; // Import useSession
 
 const Register = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [showPassword, setShowPassword] = useState(false);
     const [formData, setFormData] = useState({
-        name: '',
+        fullName: '', // Changed from 'name' to 'fullName'
         email: '',
         password: '',
         confirmPassword: '',
         tenantName: ''
     });
     const navigate = useNavigate();
+    const { supabase } = useSession(); // Get supabase client from context
+
     const [error, setError] = useState('');
     const [submitting, setSubmitting] = useState(false);
 
@@ -33,32 +36,46 @@ const Register = () => {
 
         setSubmitting(true);
         try {
-            const res = await fetch('/api/auth/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    name: formData.name,
-                    email: formData.email,
-                    password: formData.password,
-                    tenantName: formData.tenantName
-                })
+            const { data, error: authError } = await supabase.auth.signUp({
+                email: formData.email,
+                password: formData.password,
+                options: {
+                    data: {
+                        full_name: formData.fullName, // Pass full name as metadata
+                        tenant_name: formData.tenantName, // Pass tenant name as metadata
+                        // first_name and last_name can be derived from full_name in the trigger
+                    }
+                }
             });
 
-            const data = await res.json().catch(() => ({}));
+            if (authError) {
+                setError(authError.message);
+                return;
+            }
 
-            if (res.ok) {
-                // Auto login after register
-                localStorage.setItem('token', data.token);
-                if (data.tenant_id) {
-                    localStorage.setItem('tenantId', data.tenant_id);
+            if (data.user) {
+                // After successful registration, the trigger should have created the tenant and public.users entry.
+                // We can now fetch the tenant_id from public.users.
+                const { data: userData, error: userError } = await supabase
+                    .from('users')
+                    .select('tenant_id')
+                    .eq('_id', data.user.id)
+                    .single();
+
+                if (userError) {
+                    console.error('Error fetching tenant_id after registration:', userError);
+                    setError('Falha ao carregar informações do usuário após o registro.');
+                    // Optionally sign out if tenant_id cannot be fetched
+                    await supabase.auth.signOut();
+                    return;
                 }
+
+                localStorage.setItem('tenantId', userData.tenant_id);
                 navigate('/');
-            } else {
-                setError(data.message || 'Falha no cadastro. Tente novamente.');
             }
         } catch (err) {
             console.error(err);
-            setError('Erro de conexão. O servidor pode estar offline.');
+            setError('Erro de conexão. O servidor Supabase pode estar inacessível.');
         } finally {
             setSubmitting(false);
         }
@@ -166,10 +183,10 @@ const Register = () => {
                                                 <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                                                 <input
                                                     type="text"
-                                                    name="name"
+                                                    name="fullName" // Changed name to fullName
                                                     placeholder="Seu nome"
                                                     required
-                                                    value={formData.name}
+                                                    value={formData.fullName}
                                                     onChange={handleChange}
                                                     className="w-full pl-9 pr-4 py-2.5 rounded-lg bg-gray-50 border border-gray-100 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all text-xs font-medium"
                                                 />

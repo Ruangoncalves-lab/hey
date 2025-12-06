@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Eye, EyeOff, ArrowRight, Check, LayoutDashboard, BarChart2, Users } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import Preloader from '../components/Preloader';
+import { useSession } from '../context/SessionContext'; // Import useSession
 
 const Login = () => {
     const [isLoading, setIsLoading] = useState(true);
@@ -10,34 +11,46 @@ const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const navigate = useNavigate();
+    const { supabase } = useSession(); // Get supabase client from context
 
     const [error, setError] = useState('');
 
     const handleLogin = async (e) => {
         e.preventDefault();
         setError('');
-        // setIsLoading(true);
         try {
-            const res = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
+            const { data, error: authError } = await supabase.auth.signInWithPassword({
+                email,
+                password,
             });
 
-            const data = await res.json().catch(() => ({}));
+            if (authError) {
+                setError(authError.message);
+                return;
+            }
 
-            if (res.ok) {
-                localStorage.setItem('token', data.token);
-                if (data.tenant_id) {
-                    localStorage.setItem('tenantId', data.tenant_id);
+            if (data.user) {
+                // Fetch tenant_id from public.users table
+                const { data: userData, error: userError } = await supabase
+                    .from('users')
+                    .select('tenant_id')
+                    .eq('_id', data.user.id)
+                    .single();
+
+                if (userError) {
+                    console.error('Error fetching tenant_id:', userError);
+                    setError('Falha ao carregar informações do usuário.');
+                    // Optionally sign out if tenant_id cannot be fetched
+                    await supabase.auth.signOut();
+                    return;
                 }
+
+                localStorage.setItem('tenantId', userData.tenant_id);
                 navigate('/');
-            } else {
-                setError(data.message || 'Falha no login. Verifique suas credenciais ou o servidor.');
             }
         } catch (err) {
             console.error(err);
-            setError('Erro de conexão. O servidor pode estar offline.');
+            setError('Erro de conexão. O servidor Supabase pode estar inacessível.');
         }
     };
 
