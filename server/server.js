@@ -19,17 +19,8 @@ app.use(cors());
 app.use(helmet());
 app.use(morgan('dev'));
 
-// OAuth Routes
-import { facebookLogin, facebookCallback } from './controllers/oauthController.js';
-app.get('/api/auth/facebook', facebookLogin);
-app.get('/api/auth/facebook/callback', facebookCallback);
-
-// API Routes
-import metaAuthRoutes from './routes/metaAuthRoutes.js';
-import metaApiRoutes from './routes/metaApiRoutes.js';
-
-app.use('/api/meta-auth', metaAuthRoutes);
-app.use('/api/meta', metaApiRoutes);
+// OAuth Routes (Removed Facebook OAuth routes as they are now handled by Edge Functions)
+// API Routes (Removed Meta Ads API routes as they are now handled by Edge Functions)
 
 app.use('/api/webhooks', webhookRoutes);
 
