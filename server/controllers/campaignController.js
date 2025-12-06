@@ -1,5 +1,6 @@
 import { Campaign, MetricsTimeseries } from '../models/index.js';
 import { logAction } from '../utils/logger.js';
+import { supabase } from '../config/supabase.js'; // Import the Supabase client
 
 export const getCampaigns = async (req, res) => {
     try {
@@ -29,31 +30,37 @@ export const getCampaignById = async (req, res) => {
     }
 };
 
-import { Connection } from '../models/index.js';
-import { createMetaCampaign } from '../services/metaService.js';
-
 export const createCampaign = async (req, res) => {
     try {
-        const { platform, name, objective, budget } = req.body;
+        const { platform, name, objective, budget, account_id } = req.body; // Ensure account_id is passed from frontend
         let externalId = `temp_${Date.now()}`;
         let status = 'DRAFT';
 
         if (platform === 'meta') {
-            // Find active connection
-            const connection = await Connection.findOne({
-                tenant_id: req.params.tid,
-                platform: 'meta',
-                status: 'active'
-            });
-
-            if (!connection) {
-                return res.status(400).json({ message: 'No active Meta connection found' });
+            if (!account_id) {
+                return res.status(400).json({ message: 'Meta Ad Account ID is required for Meta campaigns' });
             }
 
-            // Create on Meta
-            const metaResult = await createMetaCampaign(connection, { name, objective, budget });
-            externalId = metaResult.id;
-            status = metaResult.status;
+            // Invoke Edge Function to create campaign on Meta
+            const { data: edgeFnData, error: edgeFnError } = await supabase.functions.invoke('meta-create-campaign', {
+                body: {
+                    user_id: req.user._id, // Assuming req.user is populated by auth middleware
+                    account_id: account_id,
+                    name: name,
+                    objective: objective,
+                    budget: budget // Pass the full budget object
+                }
+            });
+
+            if (edgeFnError) {
+                throw new Error(`Edge Function Invocation Error: ${edgeFnError.message}`);
+            }
+            if (edgeFnData?.error) {
+                throw new Error(`Meta API Error from Edge Function: ${edgeFnData.error}`);
+            }
+
+            externalId = edgeFnData.external_id;
+            status = edgeFnData.status; // Should be 'PAUSED' from the Edge Function
         }
 
         const campaign = new Campaign({
