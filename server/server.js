@@ -6,7 +6,6 @@ import morgan from 'morgan';
 import { initScheduler } from './jobs/scheduler.js';
 
 // Routes
-// import authRoutes from './routes/authRoutes.js'; // Removed custom auth routes
 import tenantRoutes from './routes/tenantRoutes.js';
 import webhookRoutes from './routes/webhookRoutes.js';
 
@@ -32,7 +31,6 @@ import metaApiRoutes from './routes/metaApiRoutes.js';
 app.use('/api/meta-auth', metaAuthRoutes);
 app.use('/api/meta', metaApiRoutes);
 
-// app.use('/api/auth', authRoutes); // Removed custom auth routes
 app.use('/api/webhooks', webhookRoutes);
 
 // Tenant Middleware validation
