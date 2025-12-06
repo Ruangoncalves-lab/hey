@@ -68,12 +68,12 @@ export const listMetaAccounts = async (req, res) => {
 
         // Tenta buscar contas usando o serviço
         const accounts = await fetchMetaAdAccounts(access_token);
-
+        
         // Validação defensiva: se o SDK retornar null/undefined sem lançar erro
         if (!accounts) {
             console.error('Meta SDK retornou dados nulos.');
-            return res.status(500).json({
-                message: 'O Facebook não retornou dados. O token pode ser inválido ou não ter permissões.'
+            return res.status(500).json({ 
+                message: 'O Facebook não retornou dados. O token pode ser inválido ou não ter permissões.' 
             });
         }
 
@@ -82,13 +82,13 @@ export const listMetaAccounts = async (req, res) => {
 
     } catch (error) {
         console.error('ERRO CRÍTICO NO META CONTROLLER:', error);
-
+        
         // Tenta extrair a mensagem de erro específica do Facebook, se existir
         const fbErrorMessage = error.response?.data?.error?.message;
         const finalMessage = fbErrorMessage || error.message || 'Erro desconhecido ao conectar com o Facebook';
 
         // Garante que a resposta é SEMPRE um JSON com status code apropriado
-        res.status(500).json({
+        res.status(500).json({ 
             message: `Erro na integração: ${finalMessage}`,
             details: error.toString()
         });
